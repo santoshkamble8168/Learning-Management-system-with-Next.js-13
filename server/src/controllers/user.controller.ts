@@ -3,8 +3,9 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import { asyncErrorHandler } from "../middleware";
 import User from "../models/user.model";
-import { generateToken, verifyToken } from "../utils";
+import { generateToken } from "../utils";
 import { sendActivationEmail } from "../emails";
+import { registrationSchema } from "../validation";
 
 //register user
 // Interface for user registration data
@@ -16,16 +17,25 @@ interface IRegisterUser {
 
 export const registerUser = asyncErrorHandler(
   async (req: Request<{}, {}, IRegisterUser>, res: Response) => {
-    const { name, email, password } = req.body;
+    const { error, value } = registrationSchema.validate(req.body);
+
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, error: error.details[0].message });
+    }
+
+    const { name, email, password } = value;
 
     try {
       // Check if the user with the same email already exists
       const existingUser = await User.findOne({ email });
 
       if (existingUser) {
-        return res
-          .status(400)
-          .json({ error: "User with this email already exists." });
+        return res.status(400).json({
+          success: false,
+          error: "User with this email already exists.",
+        });
       }
 
       //hashed the pain password
@@ -56,55 +66,9 @@ export const registerUser = asyncErrorHandler(
       });
     } catch (error) {
       console.error("User registration failed:", error);
-      res.status(500).json({ error: "User registration failed." });
+      res
+        .status(500)
+        .json({ success: false, error: "User registration failed." });
     }
   }
 );
-
-export const verifyAccount = async (req: Request, res: Response) => {
-  const { token } = req.body;
-
-  try {
-    // Verify the JWT token
-    const decodedToken = await verifyToken(token);
-
-    if (!decodedToken) {
-      return res.status(400).json({
-        error: "Invalid activation token.",
-      });
-    }
-
-    // Extract the user ID from the token
-    const userId: string = decodedToken._id;
-
-    // Find the user by ID
-    const user = await User.findById(userId);
-
-    // Check if the user exist
-    if (!user)
-      return res.status(404).json({
-        success: false,
-        message: "User not found.",
-      });
-
-    // Check if the user is already activated
-    if (user.isActive)
-      return res.status(200).json({
-        success: false,
-        message: "Account is already verified.",
-      });
-
-    // Update the user's isActive status to true
-    user.isActive = true;
-    await user.save();
-
-    res
-      .status(200)
-      .json({ success: true, message: "Account verified successfully." });
-  } catch (error) {
-    console.error("Account verification failed:", error);
-    res
-      .status(500)
-      .json({ success: false, error: "Account verification failed." });
-  }
-};

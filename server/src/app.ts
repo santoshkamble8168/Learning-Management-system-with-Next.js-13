@@ -3,7 +3,8 @@ import express, {Request, Response, NextFunction} from 'express';
 import cors from "cors"
 import cookieParser from "cookie-parser";
 import { ErrorMiddleware } from './middleware';
-import userRouter from "./routes/user.route"
+import authRouter from "./routes/auth.route"
+import userRouter from "./routes/user.route";
 
 export const app = express();
 
@@ -12,7 +13,8 @@ app.use(cookieParser())
 app.use(cors({origin: process.env.ORIGIN}))
 
 //routes
-app.use("/api/v1/", userRouter)
+app.use("/api/v1/auth/", authRouter);
+app.use("/api/v1/user/", userRouter);
 
 app.get('/', (req: Request, res: Response, next: NextFunction) => {
   res.status(200).json({
