@@ -1,11 +1,11 @@
 require("dotenv").config();
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
-import { asyncErrorHandler } from "../middleware";
+import { asyncErrorHandler } from "../middlewares";
 import User from "../models/user.model";
 import { generateToken } from "../utils";
 import { sendActivationEmail } from "../emails";
-import { registrationSchema } from "../validation";
+import { registrationSchema } from "../validations";
 
 //register user
 // Interface for user registration data

@@ -1,9 +1,9 @@
 require("dotenv").config();
 import { Request, Response } from "express";
-import { asyncErrorHandler } from "../middleware";
+import { asyncErrorHandler } from "../middlewares";
 import User from "../models/user.model";
 import { verifyToken } from "../utils";
-import { verificationSchema } from "../validation";
+import { verificationSchema } from "../validations";
 
 export const verifyAccount = asyncErrorHandler(
   async (req: Request, res: Response) => {
