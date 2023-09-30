@@ -3,7 +3,8 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import { asyncErrorHandler } from "../middleware";
 import User from "../models/user.model";
-import { generateToken, sendActivationEmail, verifyToken } from "../utils";
+import { generateToken, verifyToken } from "../utils";
+import { sendActivationEmail } from "../emails";
 
 //register user
 // Interface for user registration data

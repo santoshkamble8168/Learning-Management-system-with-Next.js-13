@@ -6,7 +6,7 @@ import sendEmail from "./sendEmail";
 export const sendActivationEmail = async (email: string, data: any) => {
   try {
     const html: string = await ejs.renderFile(
-      path.join(__dirname, "../mails/user-activation.ejs"),
+      path.join(__dirname, "./templates/user-activation.ejs"),
       data
     );
 
