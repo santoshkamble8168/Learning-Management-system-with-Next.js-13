@@ -5,17 +5,95 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account Activation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background-color: #007BFF;
+            color: #ffffff;
+            padding: 20px 0;
+            text-align: center;
+            font-size: 24px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 28px;
+            margin-top: 20px;
+        }
+
+        p {
+            font-size: 16px;
+            line-height: 1.5;
+            color: #555;
+        }
+
+        .button {
+            display: inline-block;
+            background-color: #007BFF;
+            color: #ffffff !important;
+            padding: 10px 20px;
+            text-decoration: none;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .button:hover {
+            background-color: #0056b3;
+            color: #ffffff;
+        }
+
+        a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+
+        .footer {
+            margin-top: 20px;
+            border-top: 1px solid #ccc;
+            padding-top: 20px;
+            text-align: center;
+            color: #777;
+        }
+        .center{
+            text-align: center;
+        }
+    </style>
 </head>
 
 <body>
-    <h1>Account Activation</h1>
-    <p>Hello <%= user.name %>,</p>
-    <p>Thank you for registering on our platform. To activate your account, please click the following link:</p>
-    <p>ActivationLink <a href="<%= activationLink %>">
-            <%= activationLink %>
-        </a></p>
-    <p>If you did not register on our platform, you can safely ignore this email.</p>
-    <p>Best regards,<br>Your Platform Team</p>
+    <div class="container">
+        <div class="header">
+            Learning Management System
+        </div>
+        <h1>Account Activation</h1>
+        <p>Hello <%= user.name %>,</p>
+        <p>Thank you for registering on our platform. To activate your account, please click the following button:</p>
+       <div class="center"><a href="<%= activationLink %>" class="button">
+        Activate your account
+    </a></div>
+        <p>If you did not register on our platform, you can safely ignore this email.</p>
+        <div class="footer">
+            <p>If you have any questions or need assistance, please contact our support team at <a
+                    href="mailto:support@lms.com">support@lms.com</a>.</p>
+            <p>&copy; 2023 Learning Management System. All rights reserved.</p>
+        </div>
+    </div>
 </body>
 
 </html>

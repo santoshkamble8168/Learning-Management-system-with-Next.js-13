@@ -13,58 +13,63 @@ export interface IUser extends Document {
   password: string;
   avatar?: IAvatar | null;
   role: "student" | "instructor" | "admin";
-  isVerified: boolean;
+  isActive: boolean;
+  isDeleted: boolean;
   activationToken: string;
   courses: Types.ObjectId[]; // Array of Course IDs
 }
 
-const userSchema = new Schema<IUser>({
-  name: {
-    type: String,
-    required: [true, "Name is required."],
-  },
-  email: {
-    type: String,
-    required: [true, "Email is required."],
-    unique: true,
-    validate: {
-      validator: function (value: string) {
-        // Simple email format validation
-        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-        return emailRegex.test(value);
+const userSchema = new Schema<IUser>(
+  {
+    name: {
+      type: String,
+      required: [true, "Name is required."],
+    },
+    email: {
+      type: String,
+      required: [true, "Email is required."],
+      unique: true,
+      validate: {
+        validator: function (value: string) {
+          // Simple email format validation
+          const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+          return emailRegex.test(value);
+        },
+        message: "Invalid email format.",
       },
-      message: "Invalid email format.",
     },
-  },
-  password: {
-    type: String,
-    required: [true, "Password is required."],
-  },
-  avatar: {
-    public_id: String,
-    url: String,
-  },
-  role: {
-    type: String,
-    enum: ["student", "instructor", "admin"],
-    default: "student",
-  },
-  isVerified: {
-    type: Boolean,
-    default: false,
-  },
-  activationToken: {
-     type: String,
-  },
-  courses: [
-    {
-      type: Schema.Types.ObjectId,
-      ref: "Course", // Assuming you have a Course model
+    password: {
+      type: String,
+      required: [true, "Password is required."],
     },
-  ],
-},{
-    timestamps: true
-});
+    avatar: {
+      public_id: String,
+      url: String,
+    },
+    role: {
+      type: String,
+      enum: ["student", "instructor", "admin"],
+      default: "student",
+    },
+    isActive: {
+      type: Boolean,
+      default: false,
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    courses: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Course", // Assuming you have a Course model
+      },
+    ],
+  },
+  {
+    timestamps: true,
+  }
+);
 
 // Create the User model
 const User: Model<IUser> = mongoose.model<IUser>("User", userSchema);
