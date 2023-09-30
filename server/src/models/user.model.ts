@@ -1,5 +1,7 @@
+require("dotenv").config()
 import mongoose, { Document, Model, Schema, Types } from "mongoose";
 import bcrypt from "bcryptjs";
+import { generateToken } from "../utils";
 
 interface IAvatar extends Document {
   public_id: string;
@@ -17,6 +19,9 @@ export interface IUser extends Document {
   isDeleted: boolean;
   activationToken: string;
   courses: Types.ObjectId[]; // Array of Course IDs
+  comparePassword: (password: string) => Promise<boolean>;
+  accessToken: () => string;
+  refreshToken: () => string;
 }
 
 const userSchema = new Schema<IUser>(
@@ -72,9 +77,6 @@ const userSchema = new Schema<IUser>(
   }
 );
 
-// Create the User model
-const User: Model<IUser> = mongoose.model<IUser>("User", userSchema);
-
 //Function to hash the password before saving
 userSchema.pre<IUser>('save', async function (next) {
   if (!this.isModified('password')) {
@@ -85,9 +87,21 @@ userSchema.pre<IUser>('save', async function (next) {
   next();
 });
 
+//access token
+userSchema.methods.accessToken = function(){
+  return generateToken(this._id)
+}
+
+//refresh access token
+userSchema.methods.refreshToken = function(){
+  return generateToken(this._id, true)
+}
+
 // Function to compare passwords
 userSchema.methods.comparePassword = async function (candidatePassword: string) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
+// Create the User model
+const User: Model<IUser> = mongoose.model<IUser>("User", userSchema);
 export default User;

@@ -38,21 +38,18 @@ export const registerUser = asyncErrorHandler(
         });
       }
 
-      //hashed the pain password
-      const hashedPassword = await bcrypt.hash(password, 10);
-
       // Create a new user instance
       const newUser = {
         name,
         email,
-        password: hashedPassword,
+        password,
       };
 
       // Save the user to the database
       const user = await User.create(newUser);
 
       // Create an activation token
-      const activationToken = generateToken(user);
+      const activationToken = generateToken(user._id);
 
       // Send an activation email
       const activationLink = `${process.env.CLIENT_URL}/verify-account/${activationToken}`;

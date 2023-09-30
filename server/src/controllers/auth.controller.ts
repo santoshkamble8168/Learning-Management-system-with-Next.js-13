@@ -2,8 +2,8 @@ require("dotenv").config();
 import { Request, Response } from "express";
 import { asyncErrorHandler } from "../middlewares";
 import User from "../models/user.model";
-import { verifyToken } from "../utils";
-import { verificationSchema } from "../validations";
+import { removeCookie, setCookie, verifyToken } from "../utils";
+import { loginSchema, verificationSchema } from "../validations";
 
 export const verifyAccount = asyncErrorHandler(
   async (req: Request, res: Response) => {
@@ -20,7 +20,7 @@ export const verifyAccount = asyncErrorHandler(
       // Verify the JWT token
       const decodedToken = await verifyToken(token);
 
-      if (!decodedToken) {
+      if (!decodedToken || !decodedToken?._id) {
         return res.status(400).json({
           success: false,
           error: "Invalid activation token.",
@@ -60,5 +60,47 @@ export const verifyAccount = asyncErrorHandler(
         .status(500)
         .json({ success: false, error: "Account verification failed." });
     }
+  }
+);
+
+interface ILoginRequest {
+  email: string;
+  password: string;
+}
+
+export const login = asyncErrorHandler(
+  async (req: Request<{}, {}, ILoginRequest>, res: Response) => {
+    const { error, value } = loginSchema.validate(req.body);
+
+    if (error) {
+      return res
+        .status(400)
+        .json({ success: false, error: error.details[0].message });
+    }
+    const { email, password } = value;
+
+    const user = await User.findOne({ email }).select("+password");
+
+    if (!user)
+      return res
+        .status(400)
+        .json({ success: false, error: "Invalid email or password" });
+
+    const isPasswordMatched = await user.comparePassword(password);
+
+    if (!isPasswordMatched)
+      return res
+        .status(400)
+        .json({ success: false, error: "Invalid email or password" });
+    
+    //send success response and set cookie to client
+    setCookie(user, 200, res)
+  }
+);
+
+export const logout = asyncErrorHandler(
+  async (req: Request, res: Response) => {
+    //remove cookie from client
+    removeCookie(200, res);
   }
 );

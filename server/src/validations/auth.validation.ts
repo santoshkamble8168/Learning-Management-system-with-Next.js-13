@@ -24,3 +24,18 @@ export const verificationSchema = Joi.object({
     "any.required": "Token is required.",
   }),
 });
+
+
+// Schema for user login data
+export const loginSchema = Joi.object({
+  email: Joi.string()
+    .email({ tlds: { allow: false } }) // Disable email validation for local development
+    .required()
+    .messages({
+      "any.required": "Email is required.",
+      "string.email": "Invalid email format.",
+    }),
+  password: Joi.string().required().messages({
+    "any.required": "Password is required."
+  }),
+});
