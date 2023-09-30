@@ -24,10 +24,10 @@ export const generateToken = (
   });
 };
 
-export const verifyToken = async (
+export const verifyToken = (
   token: string,
   isRefreshToken: boolean = false
-): Promise<{ _id: string } | null> => {
+): { _id: string } | null => {
   try {
     const payload = jwt.verify(
       token,
@@ -57,7 +57,7 @@ export const setCookie = (user: IUser, statusCode: number, res: Response) => {
   redis.set(user._id, JSON.stringify(user) as any)
 
   const accessTokenExpire = parseInt(JWT_EXPIRE || "300", 10);
-  const refreshTokenExpire = parseInt(JWT_REFRESH_EXPIRE || "1200", 10);
+  const refreshTokenExpire = parseInt(JWT_REFRESH_EXPIRE || "600", 10);
 
   const accessTokenOptions: ITokenOptions = {
     expires: new Date(Date.now() + accessTokenExpire * 1000),
@@ -88,12 +88,15 @@ export const setCookie = (user: IUser, statusCode: number, res: Response) => {
   });
 };
 
-export const removeCookie = (statusCode: number, res: Response) => {
-  res.cookie("access_token", "", {maxAge: 1});
-  res.cookie("refresh_token", "", {maxAge: 1});
+export const removeCookie = (_id: string, statusCode: number, res: Response) => {
+  //remove record from redis
+  redis.del(_id);
+
+  res.cookie("access_token", "", { maxAge: 1 });
+  res.cookie("refresh_token", "", { maxAge: 1 });
 
   res.status(statusCode).json({
     success: true,
-    message: "user logged out"
+    message: "user logged out",
   });
 }

@@ -18,7 +18,7 @@ export const verifyAccount = asyncErrorHandler(
 
     try {
       // Verify the JWT token
-      const decodedToken = await verifyToken(token);
+      const decodedToken = verifyToken(token);
 
       if (!decodedToken || !decodedToken?._id) {
         return res.status(400).json({
@@ -101,6 +101,6 @@ export const login = asyncErrorHandler(
 export const logout = asyncErrorHandler(
   async (req: Request, res: Response) => {
     //remove cookie from client
-    removeCookie(200, res);
+    removeCookie(req?.user?._id, 200, res);
   }
 );
