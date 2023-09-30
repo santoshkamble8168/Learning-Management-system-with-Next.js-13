@@ -1,5 +1,6 @@
 require("dotenv").config();
 import { Request, Response } from "express";
+import bcrypt from "bcryptjs";
 import { asyncErrorHandler } from "../middleware";
 import User from "../models/user.model";
 import { generateToken, sendActivationEmail, verifyToken } from "../utils";
@@ -26,11 +27,14 @@ export const registerUser = asyncErrorHandler(
           .json({ error: "User with this email already exists." });
       }
 
+      //hashed the pain password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
       // Create a new user instance
       const newUser = {
         name,
         email,
-        password,
+        password: hashedPassword,
       };
 
       // Save the user to the database
