@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import asyncErrorHandler from "./asyncErrorHandler";
-import { redis, verifyToken } from "../utils";
+import {redis, verifyToken } from "../utils";
 import { IUser } from "../models/user.model";
 
 declare module "express" {
@@ -35,8 +35,30 @@ export const isAuthenticated = asyncErrorHandler(
         message: "user not found",
       });
 
-     req.user = JSON.parse(user) as IUser;
+    req.user = JSON.parse(user) as IUser;
 
     next();
   }
 );
+
+export const isAuthorized = (allowedRoles: string[]) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user as IUser;
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: User not authenticated",
+      });
+    }
+
+    if (!allowedRoles.includes(user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden: User does not have the required role",
+      });
+    }
+
+    next(); // User has the required role, proceed to the next middleware
+  };
+};

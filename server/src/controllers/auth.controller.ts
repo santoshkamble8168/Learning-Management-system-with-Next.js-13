@@ -1,8 +1,8 @@
 require("dotenv").config();
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { asyncErrorHandler } from "../middlewares";
 import User from "../models/user.model";
-import { removeCookie, setCookie, verifyToken } from "../utils";
+import { redis, removeCookie, setCookie, verifyToken } from "../utils";
 import { loginSchema, verificationSchema } from "../validations";
 
 export const verifyAccount = asyncErrorHandler(
@@ -102,5 +102,50 @@ export const logout = asyncErrorHandler(
   async (req: Request, res: Response) => {
     //remove cookie from client
     removeCookie(req?.user?._id, 200, res);
+  }
+);
+
+
+export const updateAccessToken = asyncErrorHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const refresh_token = req.cookies.refresh_token as string;
+
+    if (!refresh_token) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: Refresh token is missing",
+      });
+    }
+
+    const decodedToken = verifyToken(refresh_token, true);
+
+    if (!decodedToken || !decodedToken._id) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: Invalid refresh token",
+      });
+    }
+
+    const redisUser = await redis.get(decodedToken._id);
+
+    if (!redisUser)
+      return res.status(400).json({
+        sucess: false,
+        message: "Unauthorized: Invalid refresh token",
+      });
+
+    //get user from db as we are using accessToken and refreshToken methods from userSchema
+    const user = await User.findById(decodedToken._id);
+
+    if (!user) {
+      //remove record from redis as its not available on db
+      redis.del(decodedToken._id);
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: User not found",
+      });
+    }
+
+    setCookie(user, 200, res);
   }
 );
