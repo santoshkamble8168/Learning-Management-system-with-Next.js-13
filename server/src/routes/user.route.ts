@@ -1,8 +1,17 @@
 import express from "express";
-import { registerUser } from "../controllers";
+import {
+  getUserProfile,
+  registerUser,
+  socialAuth,
+  updateProfile,
+} from "../controllers";
+import { isAuthenticated } from "../middlewares";
 
-const router = express.Router()
+const router = express.Router();
 
-router.post("/register", registerUser)
+router.post("/register", registerUser);
+router.get("/profile", isAuthenticated, getUserProfile);
+router.post("/social", socialAuth);
+router.post("/update-profile", isAuthenticated, updateProfile);
 
-export default router
+export default router;
