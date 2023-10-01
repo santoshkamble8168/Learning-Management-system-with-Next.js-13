@@ -3,7 +3,7 @@ import mongoose, { Document, Model, Schema, Types } from "mongoose";
 import bcrypt from "bcryptjs";
 import { generateToken } from "../utils";
 
-interface IAvatar extends Document {
+export interface IAvatar extends Document {
   public_id: string;
   url: string;
 }

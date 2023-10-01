@@ -84,7 +84,7 @@ export const setCookie = (user: IUser, statusCode: number, res: Response) => {
   res.status(statusCode).json({
     success: true,
     message: "user logged in",
-    accessToken,
+    item: { access_token: accessToken },
   });
 };
 

@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  changePassword,
   getUserProfile,
   registerUser,
   socialAuth,
@@ -10,8 +11,9 @@ import { isAuthenticated } from "../middlewares";
 const router = express.Router();
 
 router.post("/register", registerUser);
-router.get("/profile", isAuthenticated, getUserProfile);
 router.post("/social", socialAuth);
-router.post("/update-profile", isAuthenticated, updateProfile);
+router.get("/profile", isAuthenticated, getUserProfile);
+router.put("/update-profile", isAuthenticated, updateProfile);
+router.put("/change-password", isAuthenticated, changePassword);
 
 export default router;

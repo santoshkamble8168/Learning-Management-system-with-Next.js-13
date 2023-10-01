@@ -1,11 +1,10 @@
 require("dotenv").config();
 import { NextFunction, Request, Response } from "express";
-import bcrypt from "bcryptjs";
 import { asyncErrorHandler } from "../middlewares";
-import User from "../models/user.model";
-import { generateToken, redis, setCookie } from "../utils";
+import User, { IAvatar } from "../models/user.model";
+import { generateToken, imageDestroyer, imageUploader, redis, setCookie } from "../utils";
 import { sendActivationEmail } from "../emails";
-import { registrationSchema, updateProfileSchema } from "../validations";
+import { registrationSchema, updateProfileSchema, changePasswordSchema } from "../validations";
 import { getUserByField, getUserById } from "../services";
 
 //register user
@@ -118,14 +117,15 @@ export const socialAuth = asyncErrorHandler(
 
 interface IUpdateUser {
   name?: string;
-  password?: string;
   avatar?: string;
 }
 
 export const updateProfile = asyncErrorHandler(
   async (req: Request<{}, {}, IUpdateUser>, res: Response) => {
-
-    const { error, value } = updateProfileSchema.validate(req.body);
+    const {
+      error,
+      value: { name, avatar },
+    } = updateProfileSchema.validate(req.body);
 
     if (error) {
       return res.status(400).json({
@@ -134,10 +134,8 @@ export const updateProfile = asyncErrorHandler(
       });
     }
 
-    const { password, name, avatar } = value;
-
-    // Find the user by ID
-    const user = await getUserById(req.user?._id);
+    const userId = req.user?._id;
+    const user = await getUserById(userId);
 
     if (!user) {
       return res.status(404).json({
@@ -146,32 +144,89 @@ export const updateProfile = asyncErrorHandler(
       });
     }
 
-    // Update the password if provided
-    if (password) {
-      // Hash the new password and update it
-      const hashedPassword = await bcrypt.hash(password, 10);
-      user.password = hashedPassword;
-    }
-
-    // Update the name and avatar if provided
     if (name) {
       user.name = name;
     }
+
     if (avatar) {
-      user.avatar = avatar;
+      if (user?.avatar?.public_id) {
+        await imageDestroyer(user.avatar.public_id);
+      }
+
+      const cloudAvatar = await imageUploader(avatar, {
+        folder: "avatars",
+        width: 150,
+      });
+
+      user.avatar = {
+        public_id: cloudAvatar.public_id,
+        url: cloudAvatar.secure_url,
+      } as IAvatar;
     }
 
-    // Save the updated user
-    await user.save();
+    const updatedUser = await user.save();
+    await redis.set(userId, JSON.stringify(updatedUser));
 
     res.status(200).json({
       success: true,
       message: "Profile updated successfully",
-      user: {
-        name: user.name,
-        email: user.email,
-        avatar: user.avatar,
-      },
+      item: updatedUser,
+    });
+  }
+);
+
+
+interface IChangePassword {
+  oldPassword: string;
+  password: string;
+}
+
+export const changePassword = asyncErrorHandler(
+  async (req: Request<{}, {}, IChangePassword>, res: Response) => {
+
+    const { error, value } = changePasswordSchema.validate(req.body);
+
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        error: error.details[0].message,
+      });
+    }
+
+    const { oldPassword, password } = value;
+
+    const user = await getUserById(req.user?._id, true);
+    
+    if (!user || !user.password) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const isPasswordMatched = await user?.comparePassword(oldPassword)
+
+    if (!isPasswordMatched) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid old password",
+      });
+    }
+
+    //update the password
+    user.password = password
+    await user.save()
+
+    //update redis db
+    await redis.set(user._id, JSON.stringify(user));
+
+    const userResponse = { ...user.toJSON() };
+   delete (userResponse as any).password;
+
+    res.status(200).json({
+      success: true,
+      message: "Password updated successfully",
+      item: userResponse,
     });
   }
 );
