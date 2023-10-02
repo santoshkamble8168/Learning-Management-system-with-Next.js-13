@@ -14,8 +14,8 @@ export const commentSchema = Joi.object({
 });
 
 export const linkSchema = Joi.object({
-  title: Joi.string().required(),
-  url: Joi.string().required(),
+  title: Joi.string(),
+  url: Joi.string(),
 });
 
 export const reviewSchema = Joi.object({
@@ -52,12 +52,12 @@ export const createCourseSchema = Joi.object({
   demoUrl: Joi.string().required(),
   benefits: Joi.array().items(
     Joi.object({
-      title: Joi.string().required(),
+      title: Joi.string(),
     })
   ),
   prerequisites: Joi.array().items(
     Joi.object({
-      title: Joi.string().required(),
+      title: Joi.string(),
     })
   ),
   ratings: Joi.number().default(0),

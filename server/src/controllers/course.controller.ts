@@ -1,18 +1,15 @@
 import { NextFunction, Request, Response } from "express";
 import { asyncErrorHandler } from "../middlewares";
 import { createNewCourse } from "../services";
-import { ICourse, IImage } from "../types";
+import { ICourse } from "../types";
 import { imageUploader } from "../utils";
-import { courseDataSchema } from "../validations/course.validation";
+import { createCourseSchema } from "../validations/course.validation";
 
 export const createCourse = asyncErrorHandler(
   async (req: Request, res: Response, next: NextFunction) => {
-    const data = req.body as ICourse;
-    const userId = req.user?._id;
-
-    data.user = userId;
-
-    const { error, value } = courseDataSchema.validate(data, {
+    const data = req.body;
+  
+    const { error, value } = createCourseSchema.validate(data, {
       allowUnknown: true,
     }); // Validate the course data against the schema
 
@@ -23,18 +20,23 @@ export const createCourse = asyncErrorHandler(
       });
     }
 
-    /*
-    const thumbnail = data.thumbnail;
+     const userId = req.user?._id;
+     value.user = userId;
+    
+    const thumbnailBase64 = value.thumbnail;
 
-    if (thumbnail) {
-      const cloudImage = await imageUploader(thumbnail);
-      data.thumbnail = {
+    if (thumbnailBase64) {
+      // Upload the base64 image to Cloudinary
+      const cloudImage = await imageUploader(thumbnailBase64);
+
+      // Update data.thumbnail with Cloudinary response
+      value.thumbnail = {
         public_id: cloudImage.public_id,
         url: cloudImage.url,
       };
-    }*/
+    }
 
-    const course = await createNewCourse(data);
+    const course = await createNewCourse(value) as ICourse;
 
     if (!course) {
       return res.status(400).json({

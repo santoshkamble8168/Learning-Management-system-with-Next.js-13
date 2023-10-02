@@ -21,8 +21,8 @@ const reviewSchema = new Schema<IReview>({
 
 // Define the schema for the Link
 const linkSchema = new Schema<ILink>({
-  title: { type: String, required: true },
-  url: { type: String, required: true },
+  title: { type: String},
+  url: { type: String},
 });
 
 // Define the schema for the CourseData
@@ -55,8 +55,8 @@ const courseSchema = new Schema<ICourse>({
   tags: { type: String, required: true },
   level: { type: String, required: true },
   demoUrl: { type: String, required: true },
-  benefits: [{ title: { type: String, required: true } }], // Array of objects
-  prerequisites: [{ title: { type: String, required: true } }], // Array of objects
+  benefits: [{ title: { type: String}}], // Array of objects
+  prerequisites: [{ title: { type: String}}], // Array of objects
   reviews: [reviewSchema], // Array of reviews
   courseData: [courseDataSchema], // Array of course data
   ratings: { type: Number, default: 0 },

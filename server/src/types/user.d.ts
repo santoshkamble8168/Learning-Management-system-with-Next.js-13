@@ -8,7 +8,7 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
-  avatar?: IAvatar | null;
+  avatar?: IImage | null;
   role: "student" | "instructor" | "admin";
   isActive: boolean;
   isDeleted: boolean;
