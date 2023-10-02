@@ -1,9 +1,9 @@
 import { NextFunction, Request, Response } from "express";
 import { asyncErrorHandler } from "../middlewares";
-import { createNewCourse } from "../services";
+import { createNewCourse, getCourseById, updateCourseById } from "../services";
 import { ICourse } from "../types";
 import { imageUploader } from "../utils";
-import { createCourseSchema } from "../validations/course.validation";
+import { createCourseSchema, updateCourseSchema } from "../validations/course.validation";
 
 export const createCourse = asyncErrorHandler(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -50,5 +50,101 @@ export const createCourse = asyncErrorHandler(
       message: "New course created successfully",
       item: course,
     });
+  }
+);
+
+export const updateCourse = asyncErrorHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const courseId = req.params.id;
+
+    if (!courseId) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide course id",
+      });
+    }
+
+    const data = req.body;
+
+    //Todo: check the req.body key is exist in database
+    if (Object.keys(data).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No updates provided. The course remains unchanged.",
+      });
+    }
+
+    // Validate the course data against the update schema
+    const { error, value } = updateCourseSchema.validate(data, {
+      allowUnknown: true,
+    });
+
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        error: error.details[0].message,
+      });
+    }
+
+    const userId = req.user?._id;
+
+    try {
+      // Fetch the existing course by ID and check if it exists
+      const existingCourse = await getCourseById(courseId);
+
+      if (!existingCourse) {
+        return res.status(404).json({
+          success: false,
+          message: "Course not found",
+        });
+      }
+
+      // Check if the user has permission to update this course (e.g., they are the course owner)
+      if (existingCourse.user.toString() !== userId) {
+        return res.status(403).json({
+          success: false,
+          message: "You do not have permission to update this course",
+        });
+      }
+
+      // Handle updates to the thumbnail, if provided
+      const thumbnailBase64 = value.thumbnail;
+
+      if (thumbnailBase64) {
+        // Upload the base64 image to Cloudinary
+        const cloudImage = await imageUploader(thumbnailBase64);
+
+        // Update data.thumbnail with Cloudinary response
+        value.thumbnail = {
+          public_id: cloudImage.public_id,
+          url: cloudImage.url,
+        };
+      }
+
+      // Update the course with the new data
+      const updatedCourse = (await updateCourseById(
+        courseId,
+        value
+      )) as ICourse;
+
+      if (!updatedCourse) {
+        return res.status(400).json({
+          success: false,
+          message: "Course update failed, please try again.",
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "Course updated successfully",
+        item: updatedCourse,
+      });
+    } catch (error) {
+      console.error("Course update failed:", error);
+      res.status(500).json({
+        success: false,
+        error: "Course update failed.",
+      });
+    }
   }
 );

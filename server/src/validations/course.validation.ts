@@ -65,3 +65,31 @@ export const createCourseSchema = Joi.object({
   courseData: Joi.array().items(courseDataSchema).required(),
   reviews: Joi.array().items(reviewSchema),
 });
+
+export const updateCourseSchema = Joi.object({
+  name: Joi.string(),
+  description: Joi.string(),
+  price: Joi.number(),
+  estimatedPrice: Joi.number(),
+  thumbnail: Joi.object({
+    public_id: Joi.string(),
+    url: Joi.string(),
+  }).allow(null), // Allow null for thumbnail
+  tags: Joi.string(),
+  level: Joi.string(),
+  demoUrl: Joi.string(),
+  benefits: Joi.array().items(
+    Joi.object({
+      title: Joi.string(),
+    })
+  ),
+  prerequisites: Joi.array().items(
+    Joi.object({
+      title: Joi.string(),
+    })
+  ),
+  ratings: Joi.number(),
+  noOfPurchased: Joi.number(),
+  courseData: Joi.array().items(courseDataSchema),
+  reviews: Joi.array().items(reviewSchema),
+});
