@@ -1,14 +1,17 @@
 import { NextFunction, Request, Response } from "express";
 import { asyncErrorHandler } from "../middlewares";
-import { createNewCourse, getCourseById, updateCourseById } from "../services";
+import { createNewCourse, getCourseById, getCourses, updateCourseById } from "../services";
 import { ICourse } from "../types";
 import { imageUploader } from "../utils";
-import { createCourseSchema, updateCourseSchema } from "../validations/course.validation";
+import {
+  createCourseSchema,
+  updateCourseSchema,
+} from "../validations/course.validation";
 
 export const createCourse = asyncErrorHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const data = req.body;
-  
+
     const { error, value } = createCourseSchema.validate(data, {
       allowUnknown: true,
     }); // Validate the course data against the schema
@@ -20,9 +23,9 @@ export const createCourse = asyncErrorHandler(
       });
     }
 
-     const userId = req.user?._id;
-     value.user = userId;
-    
+    const userId = req.user?._id;
+    value.user = userId;
+
     const thumbnailBase64 = value.thumbnail;
 
     if (thumbnailBase64) {
@@ -36,7 +39,7 @@ export const createCourse = asyncErrorHandler(
       };
     }
 
-    const course = await createNewCourse(value) as ICourse;
+    const course = (await createNewCourse(value)) as ICourse;
 
     if (!course) {
       return res.status(400).json({
@@ -144,6 +147,79 @@ export const updateCourse = asyncErrorHandler(
       res.status(500).json({
         success: false,
         error: "Course update failed.",
+      });
+    }
+  }
+);
+
+export const getSingleCourse = asyncErrorHandler(
+  async (req: Request, res: Response) => {
+    const courseId = req.params.id;
+
+    if (!courseId) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid course ID.",
+      });
+    }
+
+    try {
+      // Fetch the course by its ID
+      const course = (await getCourseById(
+        courseId,
+        "-courseData.videoUrl -courseData.suggestion -courseData.questions -courseData.links"
+      )) as ICourse;
+
+      if (!course) {
+        return res.status(404).json({
+          success: false,
+          message: "Course not found.",
+        });
+      }
+
+      // Return the course details
+      res.status(200).json({
+        success: true,
+        message: "Course retrieved successfully.",
+        item: course,
+      });
+    } catch (error) {
+      console.error("Error fetching course:", error);
+      res.status(500).json({
+        success: false,
+        message: "Internal server error.",
+      });
+    }
+  }
+);
+
+
+export const getAllCourses = asyncErrorHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // Call the service function to get all courses
+      const courses = (await getCourses(
+        "-courseData.videoUrl -courseData.suggestion -courseData.questions -courseData.links"
+      )) as ICourse[];
+
+      // Check if any courses were found
+      if (courses.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "No courses found.",
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "All courses retrieved successfully",
+        items: courses,
+      });
+    } catch (error) {
+      console.error("Error getting all courses:", error);
+      res.status(500).json({
+        success: false,
+        error: "Error getting all courses.",
       });
     }
   }
