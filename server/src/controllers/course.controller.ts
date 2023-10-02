@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { asyncErrorHandler } from "../middlewares";
 import { createNewCourse, getCourseById, getCourses, updateCourseById } from "../services";
 import { ICourse } from "../types";
-import { imageUploader } from "../utils";
+import { imageUploader, redis } from "../utils";
 import {
   createCourseSchema,
   updateCourseSchema,
@@ -156,6 +156,18 @@ export const getSingleCourse = asyncErrorHandler(
   async (req: Request, res: Response) => {
     const courseId = req.params.id;
 
+    //check the course is exist in redis
+    const isCachedCourse = await redis.get(courseId)
+
+    if (isCachedCourse) {
+      // Return the course details
+      return res.status(200).json({
+        success: true,
+        message: "Course retrieved successfully.",
+        item: JSON.parse(isCachedCourse),
+      });
+    }
+
     if (!courseId) {
       return res.status(400).json({
         success: false,
@@ -177,6 +189,8 @@ export const getSingleCourse = asyncErrorHandler(
         });
       }
 
+      await redis.set(courseId, JSON.stringify(course));
+
       // Return the course details
       res.status(200).json({
         success: true,
@@ -197,6 +211,17 @@ export const getSingleCourse = asyncErrorHandler(
 export const getAllCourses = asyncErrorHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
+      //check the course is exist in redis
+      const isCachedCourses = await redis.get("allCourses");
+
+      if (isCachedCourses) {
+        // Return the courses details
+        return res.status(200).json({
+          success: true,
+          message: "Courses retrieved successfully.",
+          item: JSON.parse(isCachedCourses),
+        });
+      }
       // Call the service function to get all courses
       const courses = (await getCourses(
         "-courseData.videoUrl -courseData.suggestion -courseData.questions -courseData.links"
@@ -209,6 +234,8 @@ export const getAllCourses = asyncErrorHandler(
           message: "No courses found.",
         });
       }
+
+      await redis.set("allCourses", JSON.stringify(courses));
 
       res.status(200).json({
         success: true,
